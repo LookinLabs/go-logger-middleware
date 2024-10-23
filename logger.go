@@ -2,6 +2,7 @@ package logger
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -18,8 +19,7 @@ type responseCapture struct {
 }
 
 func (resp *responseCapture) Write(body []byte) (int, error) {
-	resp.body.Write(body)
-	return resp.writer.Write(body)
+	return resp.body.Write(body)
 }
 
 func (resp *responseCapture) WriteHeader(statusCode int) {
@@ -40,6 +40,11 @@ type LoggerMiddleware struct {
 // NewLoggerMiddleware creates a new LoggerMiddleware with the given sensitive fields and logger.
 func NewLoggerMiddleware(sensitiveFields []string, logger *log.Logger) *LoggerMiddleware {
 	return &LoggerMiddleware{sensitiveFields: sensitiveFields, logger: logger}
+}
+
+// generateRequestID generates a unique request ID.
+func generateRequestID() string {
+	return fmt.Sprintf("%d", rand.Int63())
 }
 
 // Middleware is the actual middleware function.
@@ -86,6 +91,11 @@ func (lm *LoggerMiddleware) Middleware(next http.Handler) http.Handler {
 		// Sanitize the response body
 		sanitizedResponseBody := lm.sanitizeBody([]byte(responseBody))
 
+		// Write the sanitized response body to the response writer
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(statusCode)
+		w.Write(sanitizedResponseBody)
+
 		// Calculate latency in milliseconds
 		latency := time.Since(startTime).Seconds() * 1000
 
@@ -98,22 +108,20 @@ func (lm *LoggerMiddleware) Middleware(next http.Handler) http.Handler {
 // sanitizeBody removes or masks sensitive fields from the body.
 func (lm *LoggerMiddleware) sanitizeBody(body []byte) []byte {
 	var data map[string]interface{}
-	if err := Unmarshal(body, &data); err != nil {
+	if err := json.Unmarshal(body, &data); err != nil {
 		return body
 	}
+
 	for _, field := range lm.sensitiveFields {
 		if _, exists := data[field]; exists {
 			data[field] = "****"
 		}
 	}
-	sanitizedBody, err := Marshal(data)
+
+	sanitizedBody, err := json.Marshal(data)
 	if err != nil {
 		return body
 	}
-	return sanitizedBody
-}
 
-// generateRequestID generates a unique request ID.
-func generateRequestID() string {
-	return fmt.Sprintf("%d", rand.Int63())
+	return sanitizedBody
 }
