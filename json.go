@@ -38,17 +38,10 @@ func Marshal(value interface{}) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Unmarshal is a custom JSON unmarshalling function.
-func Unmarshal(data []byte, value interface{}) error {
-	result := make(map[string]interface{})
-	err := json.Unmarshal(data, &result)
+func Unmarshal(data []byte, v interface{}) error {
+	err := json.Unmarshal(data, v)
 	if err != nil {
-		return err
+		return fmt.Errorf("error unmarshalling JSON: %v", err)
 	}
-	mapPtr, ok := value.(*map[string]interface{})
-	if !ok {
-		return fmt.Errorf("expected *map[string]interface{}")
-	}
-	*mapPtr = result
 	return nil
 }

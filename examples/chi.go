@@ -1,8 +1,9 @@
-// package examples
+// package main
 
 // import (
 // 	"log"
 // 	"net/http"
+// 	"os"
 
 // 	"github.com/lookinlabs/go-logger-middleware"
 
@@ -13,7 +14,8 @@
 // func main() {
 // 	// Initialize the logger middleware
 // 	sensitiveFields := []string{"password", "token"}
-// 	loggerMiddleware := logger.NewLoggerMiddleware(sensitiveFields)
+// 	appLogger := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+// 	loggerMiddleware := logger.NewLoggerMiddleware(sensitiveFields, appLogger)
 
 // 	// Create a Chi router
 // 	r := chi.NewRouter()
@@ -21,7 +23,6 @@
 // 	// Use the built-in Chi middleware
 // 	r.Use(middleware.RequestID)
 // 	r.Use(middleware.RealIP)
-// 	r.Use(middleware.Logger)
 // 	r.Use(middleware.Recoverer)
 
 // 	// Use the custom logger middleware

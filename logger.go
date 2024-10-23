@@ -2,12 +2,12 @@ package logger
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net/http"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 // responseCapture is a custom writer that captures the response body and status code.
@@ -49,7 +49,7 @@ func (lm *LoggerMiddleware) Middleware(next http.Handler) http.Handler {
 		startTime := time.Now()
 
 		// Generate a unique request ID
-		requestID := uuid.New().String()
+		requestID := generateRequestID()
 
 		// Read the request body
 		var requestBody []byte
@@ -111,4 +111,9 @@ func (lm *LoggerMiddleware) sanitizeBody(body []byte) []byte {
 		return body
 	}
 	return sanitizedBody
+}
+
+// generateRequestID generates a unique request ID.
+func generateRequestID() string {
+	return fmt.Sprintf("%d", rand.Int63())
 }

@@ -1,30 +1,37 @@
 // package main
 
 // import (
-// 	"log"
-// 	"net/http"
+//     "log"
+//     "net/http"
+//     "os"
 
-// 	"github.com/lookinlabs/go-logger-middleware"
+//     "github.com/lookinlabs/go-logger-middleware/logger" // Import the middleware package
 // )
 
 // func main() {
-// 	// Initialize the logger middleware
-// 	sensitiveFields := []string{"password", "token"}
-// 	loggerMiddleware := logger.NewLoggerMiddleware(sensitiveFields)
+//     // Initialize the logger middleware
+//     sensitiveFields := []string{"password", "token"}
+//     appLogger := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+//     loggerMiddleware := logger.NewLoggerMiddleware(sensitiveFields, appLogger)
 
-// 	// Create a new HTTP mux (router)
-// 	mux := http.NewServeMux()
+//     // Create a new HTTP mux (router)
+//     mux := http.NewServeMux()
 
-// 	// Define a simple endpoint
-// 	mux.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
-// 		w.Write([]byte("Hello, World!"))
-// 	})
+//     // Define a simple endpoint
+//     mux.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
+//         w.Write([]byte("Hello, World!"))
+//     })
 
-// 	// Wrap the mux with the logger middleware
-// 	handler := loggerMiddleware.Middleware(mux)
+//     // Define another endpoint
+//     mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+//         w.Write([]byte(`{"username": "john_doe", "password": "secret"}`))
+//     })
 
-// 	// Start the server
-// 	if err := http.ListenAndServe(":8080", handler); err != nil {
-// 		log.Fatalf("Failed to run server: %v", err)
-// 	}
+//     // Wrap the mux with the logger middleware
+//     handler := loggerMiddleware.Middleware(mux)
+
+//     // Start the server
+//     if err := http.ListenAndServe(":8080", handler); err != nil {
+//         log.Fatalf("Failed to run server: %v", err)
+//     }
 // }
