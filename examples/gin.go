@@ -4,7 +4,7 @@
 // 	"log"
 // 	"net/http"
 
-// 	"go-logger-middleware"
+// 	"github.com/lookinlabs/go-logger-middleware"
 
 // 	"github.com/gin-gonic/gin"
 // )

@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // responseCapture is a custom writer that captures the response body and status code.
@@ -32,42 +34,45 @@ func (resp *responseCapture) Header() http.Header {
 // LoggerMiddleware is a struct that holds the configuration for the middleware.
 type LoggerMiddleware struct {
 	sensitiveFields []string
+	logger          *log.Logger
 }
 
-// NewLoggerMiddleware creates a new LoggerMiddleware with the given sensitive fields.
-func NewLoggerMiddleware(sensitiveFields []string) *LoggerMiddleware {
-	return &LoggerMiddleware{sensitiveFields: sensitiveFields}
+// NewLoggerMiddleware creates a new LoggerMiddleware with the given sensitive fields and logger.
+func NewLoggerMiddleware(sensitiveFields []string, logger *log.Logger) *LoggerMiddleware {
+	return &LoggerMiddleware{sensitiveFields: sensitiveFields, logger: logger}
 }
 
 // Middleware is the actual middleware function.
 func (lm *LoggerMiddleware) Middleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(response http.ResponseWriter, req *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Start timer
 		startTime := time.Now()
 
+		// Generate a unique request ID
+		requestID := uuid.New().String()
+
 		// Read the request body
 		var requestBody []byte
-		if req.Body != nil {
-			requestBody, _ = io.ReadAll(req.Body)
-			req.Body = io.NopCloser(bytes.NewBuffer(requestBody))
+		if r.Body != nil {
+			requestBody, _ = io.ReadAll(r.Body)
+			r.Body = io.NopCloser(bytes.NewBuffer(requestBody))
 		}
 		// Sanitize the request body
 		sanitizedRequestBody := lm.sanitizeBody(requestBody)
 
 		// Create a custom response writer
-		responseWriter := &responseCapture{body: bytes.NewBufferString(""), writer: response}
+		responseWriter := &responseCapture{body: bytes.NewBufferString(""), writer: w}
 
 		// Process request
-		next.ServeHTTP(responseWriter, req)
+		next.ServeHTTP(responseWriter, r)
 
 		// Get request details
-		clientIP := req.RemoteAddr
-		method := req.Method
-		path := req.URL.Path
-		userAgent := req.UserAgent()
-		referer := req.Referer()
-		requestID := req.Header.Get("X-Request-ID")
-		host := req.Host
+		clientIP := r.RemoteAddr
+		method := r.Method
+		path := r.URL.Path
+		userAgent := r.UserAgent()
+		referer := r.Referer()
+		host := r.Host
 
 		// Get response details
 		statusCode := responseWriter.statusCode
@@ -85,7 +90,7 @@ func (lm *LoggerMiddleware) Middleware(next http.Handler) http.Handler {
 		latency := time.Since(startTime).Seconds() * 1000
 
 		// Log details
-		log.Printf("Request details: client_ip=%s method=%s status_code=%d body_size=%d request_body=%s response_body=%s path=%s user_agent=%s referer=%s request_id=%s host=%s latency_ms=%.4fms",
+		lm.logger.Printf("Request details: client_ip=%s method=%s status_code=%d body_size=%d request_body=%s response_body=%s path=%s user_agent=%s referer=%s request_id=%s host=%s latency_ms=%.4fms",
 			clientIP, method, statusCode, bodySize, string(sanitizedRequestBody), string(sanitizedResponseBody), path, userAgent, referer, requestID, host, latency)
 	})
 }
