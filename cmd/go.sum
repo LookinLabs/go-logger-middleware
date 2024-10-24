@@ -1,0 +1,4 @@
+github.com/go-chi/chi/v5 v5.1.0 h1:acVI1TYaD+hhedDJ3r54HyA6sExp3HfXq7QWEEY/xMw=
+github.com/go-chi/chi/v5 v5.1.0/go.mod h1:DslCQbL2OYiznFReuXYUmQ2hGd1aDpCnlMNITLSKoi8=
+github.com/lookinlabs/go-logger-middleware v0.0.0-20241023154743-cacce64726f3 h1:FqaC99m8pfUtES08uMX6TWXq6ubo2B+0zHWDDMKvOxk=
+github.com/lookinlabs/go-logger-middleware v0.0.0-20241023154743-cacce64726f3/go.mod h1:sLQMeTuFt+ZV367AHHYnGgGtbGwdqEB01Inrg/UH+BQ=

@@ -23,8 +23,10 @@ func (resp *responseCapture) Write(body []byte) (int, error) {
 }
 
 func (resp *responseCapture) WriteHeader(statusCode int) {
-	resp.statusCode = statusCode
-	resp.writer.WriteHeader(statusCode)
+	if resp.statusCode == 0 {
+		resp.statusCode = statusCode
+		resp.writer.WriteHeader(statusCode)
+	}
 }
 
 func (resp *responseCapture) Header() http.Header {
@@ -93,15 +95,33 @@ func (lm *LoggerMiddleware) Middleware(next http.Handler) http.Handler {
 
 		// Write the sanitized response body to the response writer
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(statusCode)
 		w.Write(sanitizedResponseBody)
 
 		// Calculate latency in milliseconds
 		latency := time.Since(startTime).Seconds() * 1000
 
-		// Log details
-		lm.logger.Printf("Request details: client_ip=%s method=%s status_code=%d body_size=%d request_body=%s response_body=%s path=%s user_agent=%s referer=%s request_id=%s host=%s latency_ms=%.4fms",
-			clientIP, method, statusCode, bodySize, string(sanitizedRequestBody), string(sanitizedResponseBody), path, userAgent, referer, requestID, host, latency)
+		// Log details in JSON format
+		logDetails := map[string]interface{}{
+			"client_ip":     clientIP,
+			"method":        method,
+			"status_code":   statusCode,
+			"body_size":     bodySize,
+			"request_body":  string(sanitizedRequestBody),
+			"response_body": string(sanitizedResponseBody),
+			"path":          path,
+			"user_agent":    userAgent,
+			"referer":       referer,
+			"request_id":    requestID,
+			"host":          host,
+			"latency_ms":    fmt.Sprintf("%.4fms", latency),
+		}
+
+		logDetailsJSON, err := json.Marshal(logDetails)
+		if err != nil {
+			lm.logger.Printf("Error marshalling log details: %v", err)
+		} else {
+			lm.logger.Println(string(logDetailsJSON))
+		}
 	})
 }
 

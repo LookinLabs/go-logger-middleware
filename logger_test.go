@@ -13,7 +13,7 @@ import (
 func TestLoggerMiddleware(t *testing.T) {
 	// Create a buffer to capture logs
 	var logBuffer bytes.Buffer
-	logger := log.New(&logBuffer, "", log.LstdFlags)
+	logger := log.New(&logBuffer, "", 0) // No log prefix
 
 	// Create a LoggerMiddleware instance
 	lm := NewLoggerMiddleware([]string{"password", "token"}, logger)
@@ -58,13 +58,41 @@ func TestLoggerMiddleware(t *testing.T) {
 
 	// Verify the logs
 	logOutput := logBuffer.String()
-	if !strings.Contains(logOutput, "Request details:") {
-		t.Errorf("log output does not contain expected log entry: %v", logOutput)
-	}
-	if !strings.Contains(logOutput, `"password":"****"`) {
-		t.Errorf("log output does not mask sensitive fields: %v", logOutput)
-	}
-	if !strings.Contains(logOutput, `"token":"****"`) {
-		t.Errorf("log output does not mask sensitive fields: %v", logOutput)
+	logLines := strings.Split(logOutput, "\n")
+	for _, line := range logLines {
+		if line == "" {
+			continue
+		}
+		var logDetails map[string]interface{}
+		if err := json.Unmarshal([]byte(line), &logDetails); err != nil {
+			t.Fatalf("failed to parse log output: %v", err)
+		}
+
+		// Check log details
+		expectedRequestBody := map[string]interface{}{
+			"username": "john",
+			"password": "****",
+			"token":    "****",
+		}
+		var actualRequestBody map[string]interface{}
+		if err := json.Unmarshal([]byte(logDetails["request_body"].(string)), &actualRequestBody); err != nil {
+			t.Fatalf("failed to parse request body in log: %v", err)
+		}
+		if !equal(actualRequestBody, expectedRequestBody) {
+			t.Errorf("log output does not mask sensitive fields in request body: %v", logDetails["request_body"])
+		}
+
+		expectedResponseBody := map[string]interface{}{
+			"message":  "success",
+			"password": "****",
+			"token":    "****",
+		}
+		var actualResponseBody map[string]interface{}
+		if err := json.Unmarshal([]byte(logDetails["response_body"].(string)), &actualResponseBody); err != nil {
+			t.Fatalf("failed to parse response body in log: %v", err)
+		}
+		if !equal(actualResponseBody, expectedResponseBody) {
+			t.Errorf("log output does not mask sensitive fields in response body: %v", logDetails["response_body"])
+		}
 	}
 }
