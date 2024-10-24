@@ -47,3 +47,12 @@ func Unmarshal(data []byte, v interface{}) error {
 	}
 	return nil
 }
+
+// MapToKeyValuePairs converts a map to a slice of KeyValuePair
+func MapToKeyValuePairs(m map[string]interface{}) []KeyValuePair {
+	pairs := make([]KeyValuePair, 0, len(m))
+	for k, v := range m {
+		pairs = append(pairs, KeyValuePair{Key: k, Value: v})
+	}
+	return pairs
+}

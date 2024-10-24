@@ -1,0 +1,34 @@
+goos: darwin
+goarch: arm64
+pkg: benchmarks
+cpu: Apple M3 Pro
+BenchmarkMarshal_Logger_Small-11         	 2428286	       471.0 ns/op
+BenchmarkMarshal_Logger_Medium-11        	 1000000	      1055 ns/op
+BenchmarkMarshal_Logger_Large-11         	  749445	      1611 ns/op
+BenchmarkUnmarshal_Logger_Small-11       	  647900	      1734 ns/op
+BenchmarkUnmarshal_Logger_Medium-11      	  250807	      4780 ns/op
+BenchmarkUnmarshal_Logger_Large-11       	  148404	      8062 ns/op
+BenchmarkMarshal_Stdlib_Small-11         	 1000000	      1056 ns/op
+BenchmarkMarshal_Stdlib_Medium-11        	  363956	      3273 ns/op
+BenchmarkMarshal_Stdlib_Large-11         	  171868	      6893 ns/op
+BenchmarkUnmarshal_Stdlib_Small-11       	  691006	      1762 ns/op
+BenchmarkUnmarshal_Stdlib_Medium-11      	  212148	      5613 ns/op
+BenchmarkUnmarshal_Stdlib_Large-11       	   92278	     12845 ns/op
+BenchmarkMarshal_Goccy_Small-11          	 1884061	       638.1 ns/op
+BenchmarkMarshal_Goccy_Medium-11         	  548515	      2184 ns/op
+BenchmarkMarshal_Goccy_Large-11          	  255254	      4653 ns/op
+BenchmarkUnmarshal_Goccy_Small-11        	 1599242	       751.9 ns/op
+BenchmarkUnmarshal_Goccy_Medium-11       	  438148	      2733 ns/op
+BenchmarkUnmarshal_Goccy_Large-11        	  170019	      7037 ns/op
+BenchmarkMarshal_Jsoniter_Small-11       	 2425772	       494.9 ns/op
+BenchmarkMarshal_Jsoniter_Medium-11      	  839830	      1437 ns/op
+BenchmarkMarshal_Jsoniter_Large-11       	  381164	      3117 ns/op
+BenchmarkUnmarshal_Jsoniter_Small-11     	 1341801	       896.5 ns/op
+BenchmarkUnmarshal_Jsoniter_Medium-11    	  366684	      3316 ns/op
+BenchmarkUnmarshal_Jsoniter_Large-11     	  140568	      8607 ns/op
+BenchmarkCustomLoggerMiddleware-11       	  566791	      2084 ns/op	  22.07 MB/s
+BenchmarkChiLoggerMiddleware-11          	 1389481	       862.3 ns/op	  53.35 MB/s
+BenchmarkNegroniLoggerMiddleware-11      	  887360	      1358 ns/op	  33.87 MB/s
+BenchmarkGorillaLoggerMiddleware-11      	 1275544	       940.1 ns/op	  48.93 MB/s
+PASS
+ok  	benchmarks	39.435s
