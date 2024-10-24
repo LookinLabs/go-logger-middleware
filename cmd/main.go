@@ -4,56 +4,46 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"os"
-
-	"github.com/lookinlabs/go-logger-middleware"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
-	// Initialize the logger middleware
-	sensitiveFields := []string{"password", "token"}
-	appLogger := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
-	loggerMiddleware := logger.NewLoggerMiddleware(sensitiveFields, appLogger)
-
-	// Create a Chi router
 	r := chi.NewRouter()
+	r.Use(middleware.Logger)
 
-	// Use the built-in Chi middleware
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Recoverer)
-
-	// Use the custom logger middleware
-	r.Use(loggerMiddleware.Middleware)
-
-	// Define a simple GET endpoint
 	r.Get("/hello", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello, World!"))
+		if _, err := w.Write([]byte("Hello, World!")); err != nil {
+			log.Printf("Failed to write response: %v", err)
+		}
 	})
 
-	// Define a POST endpoint to test sanitization
-	r.Post("/test", func(w http.ResponseWriter, r *http.Request) {
-		var requestBody map[string]interface{}
-		if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		responseBody, err := json.Marshal(requestBody)
+	r.Get("/json", func(w http.ResponseWriter, r *http.Request) {
+		response := map[string]string{"message": "Hello, JSON!"}
+		responseBody, err := json.Marshal(response)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Failed to marshal JSON", http.StatusInternalServerError)
 			return
 		}
-
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(responseBody)
+		if _, err := w.Write(responseBody); err != nil {
+			log.Printf("Failed to write response: %v", err)
+		}
 	})
+
+	// Create a custom server with timeouts
+	server := &http.Server{
+		Addr:         ":8080",
+		Handler:      r,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  15 * time.Second,
+	}
 
 	// Start the server
-	if err := http.ListenAndServe(":8080", r); err != nil {
+	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("Failed to run server: %v", err)
 	}
 }

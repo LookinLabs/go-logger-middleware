@@ -1,0 +1,51 @@
+run:
+  concurrency: 4
+  deadline: 5m
+  tests: true
+
+linters-settings:
+  gocyclo:
+    min-complexity: 20
+
+linters:
+  disable-all: true
+  enable:
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - dogsled
+    - durationcheck
+    - errcheck
+    - errchkjson
+    - forbidigo
+    - gocognit
+    - gocritic
+    - godox
+    - gofmt
+    - gofumpt
+    - goimports
+    - goprintffuncname
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - nestif
+    - nilerr
+    - nonamedreturns
+    - prealloc
+    - predeclared
+    - revive
+    - staticcheck
+    - stylecheck
+    - tenv
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - usestdlibvars
+    - whitespace
+
+issues:
+  max-same-issues: 0

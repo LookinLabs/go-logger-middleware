@@ -11,7 +11,7 @@ COPY . .
 RUN go mod download
 
 # Build the Go app
-RUN go build -o main .
+RUN GOOS=linux GOARCH=amd64 go build -o main .
 
 # Start a new stage from scratch
 FROM alpine:latest
