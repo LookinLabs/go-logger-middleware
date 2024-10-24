@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"gonum.org/v1/plot"
-	"gonum.org/v1/plot/plotter"
-	"gonum.org/v1/plot/vg"
+	"gonum.org/v1/plot"         // #nosec G501
+	"gonum.org/v1/plot/plotter" // #nosec G501
+	"gonum.org/v1/plot/vg"      // #nosec G501
 )
 
 // BenchmarkResult holds the parsed benchmark result

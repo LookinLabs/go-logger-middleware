@@ -2,10 +2,11 @@ package logger
 
 import (
 	"bytes"
+	"crypto/rand"
 	"fmt"
 	"io"
 	"log"
-	"math/rand"
+	"math/big"
 	"net/http"
 	"sync"
 	"time"
@@ -34,15 +35,15 @@ func (resp *responseCapture) Header() http.Header {
 }
 
 // LoggerMiddleware is a struct that holds the configuration for the middleware.
-type LoggerMiddleware struct {
+type Middleware struct {
 	sensitiveFields []string
 	logger          *log.Logger
 	bufferPool      sync.Pool
 }
 
-// NewLoggerMiddleware creates a new LoggerMiddleware with the given sensitive fields and logger.
-func NewLoggerMiddleware(sensitiveFields []string, logger *log.Logger) *LoggerMiddleware {
-	return &LoggerMiddleware{
+// NewMiddleware creates a new Middleware with the given sensitive fields and logger.
+func NewLoggerMiddleware(sensitiveFields []string, logger *log.Logger) *Middleware {
+	return &Middleware{
 		sensitiveFields: sensitiveFields,
 		logger:          logger,
 		bufferPool: sync.Pool{
@@ -55,11 +56,17 @@ func NewLoggerMiddleware(sensitiveFields []string, logger *log.Logger) *LoggerMi
 
 // generateRequestID generates a unique request ID.
 func generateRequestID() string {
-	return fmt.Sprintf("%d", rand.Int63())
+	genNum := new(big.Int).SetBit(new(big.Int), 63, 1)
+	num, err := rand.Int(rand.Reader, genNum)
+	if err != nil {
+		// Handle error appropriately in your context
+		panic(err)
+	}
+	return fmt.Sprintf("%d", num)
 }
 
 // Middleware is the actual middleware function.
-func (lm *LoggerMiddleware) Middleware(next http.Handler) http.Handler {
+func (lm *Middleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(response http.ResponseWriter, req *http.Request) {
 		// Create a custom response writer
 		responseWriter := &responseCapture{body: lm.bufferPool.Get().(*bytes.Buffer), writer: response}
@@ -136,7 +143,7 @@ func (lm *LoggerMiddleware) Middleware(next http.Handler) http.Handler {
 }
 
 // sanitizeBody removes or masks sensitive fields from the body.
-func (lm *LoggerMiddleware) sanitizeBody(body []byte) []byte {
+func (lm *Middleware) sanitizeBody(body []byte) []byte {
 	var data map[string]interface{}
 	if err := Unmarshal(body, &data); err != nil {
 		return body

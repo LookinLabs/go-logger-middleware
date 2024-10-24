@@ -19,7 +19,7 @@ func TestLoggerMiddleware(t *testing.T) {
 	lm := NewLoggerMiddleware([]string{"password", "token"}, logger)
 
 	// Create a test HTTP handler
-	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		if _, err := w.Write([]byte(`{"message": "success", "password": "secret", "token": "12345"}`)); err != nil {
 			t.Fatalf("failed to write response: %v", err)
@@ -30,7 +30,7 @@ func TestLoggerMiddleware(t *testing.T) {
 	wrappedHandler := lm.Middleware(testHandler)
 
 	// Create a test HTTP request
-	req := httptest.NewRequest("POST", "http://example.com/foo", strings.NewReader(`{"username": "john", "password": "secret", "token": "12345"}`))
+	req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader(`{"username": "john", "password": "secret", "token": "12345"}`))
 	req.Header.Set("Content-Type", "application/json")
 
 	// Create a response recorder
