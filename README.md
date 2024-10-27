@@ -126,10 +126,9 @@ func main() {
 	}
 }
 ```
+## Logs example at CloudWatch
 
-## Benchmarks
-
-
+![CloudWatch Logs](assets/cloudwatch.png)
 
 ## License
 
