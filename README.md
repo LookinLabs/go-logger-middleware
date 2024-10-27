@@ -4,6 +4,20 @@ Go Logger Middleware is a lightweight, fast and simple HTTP middleware that logs
 
 It uses only standard Go libraries and is compatible with any Go web framework that supports HTTP middleware.
 
+## Features
+
+- User Agent
+- Latency
+- Request ID
+- Request Method
+- Request Body
+- Request Path
+- Client IP
+- Status Code
+- Body Size
+- Response Body
+- Response Host
+
 ## Usage
 
 The examples usage can be found under the `examples` directory.
