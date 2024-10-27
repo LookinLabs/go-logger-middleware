@@ -74,21 +74,9 @@ func (lm *Middleware) Middleware(next http.Handler) http.Handler {
 		responseWriter.body.Reset()
 
 		var (
-			startTime    = time.Now()
-			requestID    = generateRequestID()
-			requestBody  []byte
-			bodySize     = responseWriter.body.Len()
-			responseBody = responseWriter.body.Bytes()
-
-			// Get request details
-			clientIP  = req.RemoteAddr
-			method    = req.Method
-			path      = req.URL.Path
-			userAgent = req.UserAgent()
-			host      = req.Host
-
-			sanitizedRequestBody  = lm.sanitizeBody(requestBody)
-			sanitizedResponseBody = lm.sanitizeBody(responseBody)
+			startTime   = time.Now()
+			requestID   = generateRequestID()
+			requestBody []byte
 		)
 
 		if req.Body != nil {
@@ -104,6 +92,20 @@ func (lm *Middleware) Middleware(next http.Handler) http.Handler {
 		if statusCode == 0 {
 			statusCode = http.StatusOK
 		}
+
+		// Read the response body after the request is processed
+		responseBody := responseWriter.body.Bytes()
+		bodySize := len(responseBody)
+
+		// Get request details
+		clientIP := req.RemoteAddr
+		method := req.Method
+		path := req.URL.Path
+		userAgent := req.UserAgent()
+		host := req.Host
+
+		sanitizedRequestBody := lm.sanitizeBody(requestBody)
+		sanitizedResponseBody := lm.sanitizeBody(responseBody)
 
 		// Write the sanitized response body to the response writer
 		responseWriter.WriteHeader(statusCode)

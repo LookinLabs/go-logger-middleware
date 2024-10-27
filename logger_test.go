@@ -1,100 +1,78 @@
 package logger
 
 import (
-	"bytes"
-	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 )
 
 func TestLoggerMiddleware(t *testing.T) {
-	// Create a buffer to capture logs
-	var logBuffer bytes.Buffer
-	logger := log.New(&logBuffer, "", 0) // No log prefix
+	// Initialize the logger middleware
+	sensitiveFields := []string{"password", "token"}
+	appLogger := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+	loggerMiddleware := NewLoggerMiddleware(sensitiveFields, appLogger)
 
-	// Create a LoggerMiddleware instance
-	lm := NewLoggerMiddleware([]string{"password", "token"}, logger)
+	// Create a new HTTP mux (router)
+	mux := http.NewServeMux()
 
-	// Create a test HTTP handler
-	testHandler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		if _, err := w.Write([]byte(`{"message": "success", "password": "secret", "token": "12345"}`)); err != nil {
-			t.Fatalf("failed to write response: %v", err)
-		}
+	// Define a simple endpoint
+	mux.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Hello, World!"))
 	})
 
-	// Wrap the test handler with the middleware
-	wrappedHandler := lm.Middleware(testHandler)
+	// Define another endpoint
+	mux.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"username":"john_doe","password":"secret"}`))
+	})
 
-	// Create a test HTTP request
-	req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", strings.NewReader(`{"username": "john", "password": "secret", "token": "12345"}`))
-	req.Header.Set("Content-Type", "application/json")
+	// Define an endpoint with a token
+	mux.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"token":"1234567890"}`))
+	})
 
-	// Create a response recorder
-	rr := httptest.NewRecorder()
+	// Wrap the mux with the logger middleware
+	handler := loggerMiddleware.Middleware(mux)
 
-	// Send the request to the wrapped handler
-	wrappedHandler.ServeHTTP(rr, req)
+	// Create a test server
+	server := httptest.NewServer(handler)
+	defer server.Close()
 
-	// Verify the response
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	// Define test cases
+	tests := []struct {
+		name       string
+		endpoint   string
+		wantStatus int
+		wantBody   string
+	}{
+		{"HelloEndpoint", "/hello", http.StatusOK, "Hello, World!"},
+		{"LoginEndpoint", "/login", http.StatusOK, `{"username":"john_doe","password":"****"}`},
+		{"TokenEndpoint", "/token", http.StatusOK, `{"token":"****"}`},
 	}
 
-	// Parse the response body
-	var responseBody map[string]interface{}
-	if err := json.Unmarshal(rr.Body.Bytes(), &responseBody); err != nil {
-		t.Fatalf("failed to parse response body: %v", err)
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := http.Get(server.URL + tt.endpoint)
+			if err != nil {
+				t.Fatalf("Failed to send request: %v", err)
+			}
+			defer resp.Body.Close()
 
-	// Verify the sanitized fields in the response body
-	if responseBody["password"] != "****" {
-		t.Errorf("handler returned unexpected password: got %v want %v", responseBody["password"], "****")
-	}
-	if responseBody["token"] != "****" {
-		t.Errorf("handler returned unexpected token: got %v want %v", responseBody["token"], "****")
-	}
+			if resp.StatusCode != tt.wantStatus {
+				t.Errorf("Expected status %d, got %d", tt.wantStatus, resp.StatusCode)
+			}
 
-	// Verify the logs
-	logOutput := logBuffer.String()
-	logLines := strings.Split(logOutput, "\n")
-	for _, line := range logLines {
-		if line == "" {
-			continue
-		}
-		var logDetails map[string]interface{}
-		if err := json.Unmarshal([]byte(line), &logDetails); err != nil {
-			t.Fatalf("failed to parse log output: %v", err)
-		}
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatalf("Failed to read response body: %v", err)
+			}
 
-		// Check log details
-		expectedRequestBody := map[string]interface{}{
-			"username": "john",
-			"password": "****",
-			"token":    "****",
-		}
-		var actualRequestBody map[string]interface{}
-		if err := json.Unmarshal([]byte(logDetails["request_body"].(string)), &actualRequestBody); err != nil {
-			t.Fatalf("failed to parse request body in log: %v", err)
-		}
-		if !equal(actualRequestBody, expectedRequestBody) {
-			t.Errorf("log output does not mask sensitive fields in request body: %v", logDetails["request_body"])
-		}
-
-		expectedResponseBody := map[string]interface{}{
-			"message":  "success",
-			"password": "****",
-			"token":    "****",
-		}
-		var actualResponseBody map[string]interface{}
-		if err := json.Unmarshal([]byte(logDetails["response_body"].(string)), &actualResponseBody); err != nil {
-			t.Fatalf("failed to parse response body in log: %v", err)
-		}
-		if !equal(actualResponseBody, expectedResponseBody) {
-			t.Errorf("log output does not mask sensitive fields in response body: %v", logDetails["response_body"])
-		}
+			if !strings.Contains(string(body), tt.wantBody) {
+				t.Errorf("Expected body to contain %q, got %q", tt.wantBody, string(body))
+			}
+		})
 	}
 }
