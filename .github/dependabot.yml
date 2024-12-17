@@ -6,7 +6,6 @@ updates:
     directory: "./"
     reviewers:
       - "Matrix278"
-      - "KostLinux"
     schedule:
       interval: "weekly"
     commit-message:
